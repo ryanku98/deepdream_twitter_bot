@@ -1,0 +1,6 @@
+# virtual environments
+/venv
+
+# secret stuffs
+/config
+
