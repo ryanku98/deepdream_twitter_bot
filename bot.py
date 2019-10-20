@@ -57,7 +57,7 @@ def repost():
             media_type = mention.extended_entities["media"][0]["type"]
         except:
             print("No media found")
-            api.update_status(status="No media found - tweet me an image to see the Deep Dream generated version! If you believe this is an error, feel free to open an issue ____ and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            api.update_status(status="No media found - tweet me an image to see the Deep Dream generated version! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
             set_last_tweet(mention.id)
             # update error counter
             error_count += 1
@@ -66,7 +66,7 @@ def repost():
 
         if media_type == "video":
             print("Videos not supported")
-            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue ____ and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
             set_last_tweet(mention.id)
             # update error counter
             error_count += 1
