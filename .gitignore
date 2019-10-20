@@ -4,3 +4,11 @@
 # secret stuffs
 /config
 
+# auto-created media files
+image*
+*.jpg
+*.jpeg
+*.png
+
+# dev testing
+*.json
