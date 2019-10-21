@@ -2,6 +2,7 @@ import tweepy   # Twitter API Python wrapper
 import os       # path.exists
 import requests # get
 import time     # sleep
+from glob import glob
 
 a_key_path = "config/access_key.txt"
 a_sec_path = "config/access_secret.txt"
@@ -168,8 +169,9 @@ def get_hashtags(hash_dict, media_url):
     return str
     
 def delete_media():
-    if os.path.exists(image_file_path):
-        os.remove(image_file_path)
+    local_media = glob(image_file_path + "*")
+    for media in local_media:
+        os.remove(media)
         
 def print_counters():
     print(str(tweet_count) + " tweets | " + str(error_count) + " errors")
