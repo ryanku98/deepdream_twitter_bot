@@ -11,6 +11,7 @@ error_count = 0
 api_retries = 3
 
 def repost():
+    """Checks 20 most recent @deepdreamrepost mentions and reposts deepdream versions of tweeted images"""
     api = authorize_twitter()
     
     global tweet_count, error_count
