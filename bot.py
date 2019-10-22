@@ -6,15 +6,14 @@ from glob import glob
 
 image_file_path = "image."
 my_username = "deepdreamrepost"
-tweet_count = 0
-error_count = 0
 api_retries = 3
 
 def repost():
     """Checks 20 most recent @deepdreamrepost mentions and reposts deepdream versions of tweeted images"""
     api = authorize_twitter()
     
-    global tweet_count, error_count
+    tweet_count = 0
+    error_count = 0
 
     my_mentions = api.mentions_timeline(get_last_tweet_id(), tweet_mode="extended")    
     for mention in reversed(my_mentions):
@@ -49,7 +48,7 @@ def repost():
             tweet_count += 1
         
     delete_media()
-    print_counters()
+    print_counters(tweet_count, error_count)
     return
     
 def authorize_twitter():
@@ -59,7 +58,6 @@ def authorize_twitter():
     a_sec_path = "config/access_secret.txt"
     c_key_path = "config/consumer_key.txt"
     c_sec_path = "config/consumer_secret.txt"
-    
     # access Twitter keys/tokens
     a_key_file = open(a_key_path, "r")
     a_sec_file = open(a_sec_path, "r")
@@ -73,7 +71,6 @@ def authorize_twitter():
     a_sec_file.close()
     c_key_file.close()
     c_sec_file.close()
-    
     # Twitter authentication
     auth = tweepy.OAuthHandler(c_key, c_sec)
     auth.set_access_token(a_key, a_sec)
@@ -88,6 +85,14 @@ def get_last_tweet_id():
     if not last_tweet_id:
         return 1
     return last_tweet_id
+    
+def set_last_tweet_id(last_id):
+    """Saves ID of the most recently processed tweet"""
+    last_tweet_id_path = "config/last_tweet_id.txt"
+    last_tweet_id_file = open(last_tweet_id_path, "w")
+    last_tweet_id_file.write(str(last_id))
+    last_tweet_id_file.close()
+    return
 
 def deepdream(media_url):
     """Sends an image through DeepAI's deepdream API and returns the locally saved file filename"""
@@ -124,13 +129,6 @@ def deepdream(media_url):
 def get_tweet_url(username, id):
     """Returns tweet link or corresponding username and ID"""
     return "https://twitter.com/" + username + "/status/" + str(id)
-    
-def set_last_tweet_id(last_id):
-    """Saves ID of the most recently processed tweet"""
-    last_tweet_id_file = open(last_tweet_id_path, "w")
-    last_tweet_id_file.write(str(last_id))
-    last_tweet_id_file.close()
-    return
     
 def get_image_type(link_str):
     """Returns the tail of link for appropriate media file extension"""
@@ -182,11 +180,10 @@ def delete_media():
         os.remove(media)
     return
 
-def print_counters():
+def print_counters(tweets, errors):
     """Prints tweet_count and error_count if either are greater than 0"""
-    # if tweet_count > 0 or error_count > 0:
-    #     print(str(tweet_count) + " tweets | " + str(error_count) + " errors")
-    print(str(tweet_count) + " tweets | " + str(error_count) + " errors")
+    if tweets > 0 or errors > 0:
+        print(str(tweets) + " tweets | " + str(errors) + " errors")
     return
     
 if __name__ == "__main__":
