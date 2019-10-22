@@ -22,5 +22,5 @@ or have the bot check for mentions every minute with
 python3 scheduler.py
 ```
 
-Finally, please report any bugs [here](https://github.com/ryanku98/deepdream_twitter_bot/issues)!
+Finally, please report any :skull: bugs :skull: or submit any :sparkling_heart: features/suggestions :sparkling_heart: [here](https://github.com/ryanku98/deepdream_twitter_bot/issues)!
 ### [Happy Tweeting!](https://twitter.com/) ###
