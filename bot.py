@@ -4,21 +4,61 @@ import requests # get
 import time     # sleep
 from glob import glob
 
-a_key_path = "config/access_key.txt"
-a_sec_path = "config/access_secret.txt"
-c_key_path = "config/consumer_key.txt"
-c_sec_path = "config/consumer_secret.txt"
-last_tweet_id_path = "config/last_tweet_id.txt"
 image_file_path = "image."
-deepai_api_key_path = "config/deepai_api_key.txt"
-deepdream_api_url = "https://api.deepai.org/api/deepdream"
-microsoft_image_description_api_url = "https://microsoft-azure-microsoft-computer-vision-v1.p.rapidapi.com/describe"
 my_username = "deepdreamrepost"
 tweet_count = 0
 error_count = 0
 api_retries = 3
 
 def repost():
+    api = authorize_twitter()
+    
+    global tweet_count, error_count
+
+    my_mentions = api.mentions_timeline(get_last_tweet_id(), tweet_mode="extended")    
+    for mention in reversed(my_mentions):
+        print("Found tweet " + get_tweet_url(mention.user.screen_name, mention.id))
+        try:
+            # tweets without media don't have the extended_entities attribute
+            media_type = mention.extended_entities["media"][0]["type"]
+        except:
+            print("No media found")
+            api.update_status(status="No media found - tweet me an image to see the Deep Dream generated version! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            error_count += 1
+            # go to next mention
+            continue
+
+        if media_type == "video":
+            # if video, reply stating not supported
+            print("Videos not supported")
+            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            error_count += 1
+        elif media_type == "photo":
+            # if image, process and upload
+            media_url = mention.extended_entities["media"][0]["media_url_https"]
+            filename = deepdream(media_url)
+            # tweet deepdream photo
+            t = api.update_with_media(filename, status=get_hashtags(mention.entities["hashtags"], media_url))
+            print("Generated " + get_tweet_url(my_username, t.id))
+            # reply to original tweet with deepdream tweet
+            api.update_status(status=get_tweet_url(my_username, t.id), in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            tweet_count += 1
+        
+    delete_media()
+    print_counters()
+    return
+    
+def authorize_twitter():
+    """Uses OAuth2 to get access to Twitter account"""
+    # Twitter key/token file paths
+    a_key_path = "config/access_key.txt"
+    a_sec_path = "config/access_secret.txt"
+    c_key_path = "config/consumer_key.txt"
+    c_sec_path = "config/consumer_secret.txt"
+    
     # access Twitter keys/tokens
     a_key_file = open(a_key_path, "r")
     a_sec_file = open(a_sec_path, "r")
@@ -36,60 +76,22 @@ def repost():
     # Twitter authentication
     auth = tweepy.OAuthHandler(c_key, c_sec)
     auth.set_access_token(a_key, a_sec)
-    api = tweepy.API(auth)
+    return tweepy.API(auth)
     
-    if os.path.exists(last_tweet_id_path):
-        # read last tweet ID
-        last_tweet_id_file = open(last_tweet_id_path, "r")
-        last_tweet_id = last_tweet_id_file.read()
-        last_tweet_id_file.close()
-        if not last_tweet_id:
-            # if empty file
-            last_tweet_id = 1
-        my_mentions = api.mentions_timeline(last_tweet_id, tweet_mode="extended")
-    else:
-        my_mentions = api.mentions_timeline(tweet_mode="extended")
-    
-    global tweet_count, error_count
-    for mention in reversed(my_mentions):
-        print("Found tweet " + get_tweet_url(mention.user.screen_name, mention.id))
-        try:
-            # tweets without media don't have the extended_entities attribute
-            media_type = mention.extended_entities["media"][0]["type"]
-        except:
-            print("No media found")
-            api.update_status(status="No media found - tweet me an image to see the Deep Dream generated version! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
-            set_last_tweet(mention.id)
-            # update error counter
-            error_count += 1
-            # go to next mention
-            continue
+def get_last_tweet_id():
+    """Retrieves ID of most recently processed tweet"""
+    last_tweet_id_path = "config/last_tweet_id.txt"
+    last_tweet_id_file = open(last_tweet_id_path, "r")
+    last_tweet_id = last_tweet_id_file.read()
+    last_tweet_id_file.close()
+    if not last_tweet_id:
+        return 1
+    return last_tweet_id
 
-        if media_type == "video":
-            print("Videos not supported")
-            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
-            set_last_tweet(mention.id)
-            # update error counter
-            error_count += 1
-        elif media_type == "photo":
-            media_url = mention.extended_entities["media"][0]["media_url_https"]
-            get_hashtags(mention.entities["hashtags"], media_url)
-            filename = deepdream(media_url)
-            # tweet deepdream photo
-            t = api.update_with_media(filename, status="#deepdream " + get_hashtags(mention.entities["hashtags"], media_url))
-            print("Generated " + get_tweet_url(my_username, t.id))
-            # reply to original tweet with deepdream tweet
-            api.update_status(status=get_tweet_url(my_username, t.id), in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
-            set_last_tweet(mention.id)
-            # update counter
-            tweet_count += 1
-        
-    delete_media()
-    print_counters()
-    return
-
-# send image through deepdream API, return name of file in local storage
 def deepdream(media_url):
+    """Sends an image through DeepAI's deepdream API and returns the locally saved file filename"""
+    deepai_api_key_path = "config/deepai_api_key.txt"
+    deepdream_api_url = "https://api.deepai.org/api/deepdream"
     # set deepai metadata
     data = {"image": media_url}
     deepai_api_key_file = open(deepai_api_key_path, "r")
@@ -119,20 +121,24 @@ def deepdream(media_url):
     return filename
     
 def get_tweet_url(username, id):
+    """Returns tweet link or corresponding username and ID"""
     return "https://twitter.com/" + username + "/status/" + str(id)
     
-def set_last_tweet(last_id):
+def set_last_tweet_id(last_id):
+    """Saves ID of the most recently processed tweet"""
     last_tweet_id_file = open(last_tweet_id_path, "w")
     last_tweet_id_file.write(str(last_id))
     last_tweet_id_file.close()
     return
     
-# checks tail of link for image type, return as string to set appropriate file name
 def get_image_type(link_str):
+    """Returns the tail of link for appropriate media file extension"""
     index_of_period = link_str.rfind(".")
     return link_str[index_of_period+1 : ]
     
 def get_hashtags(hash_dict, media_url):
+    """Extracts hashtags from JSON hashtag dictionary and Azure image recognition API and returns the equivalent hashtag string"""
+    microsoft_image_description_api_url = "https://microsoft-azure-microsoft-computer-vision-v1.p.rapidapi.com/describe"
     # first get original poster hashtags
     hash_set = set()
     for tag in hash_dict:
@@ -163,18 +169,24 @@ def get_hashtags(hash_dict, media_url):
     for tag in r.json()["description"]["tags"]:
         hash_set.add(tag)
         
-    str = ""
+    str = "#deepdream "
     for tag in hash_set:
         str += "#" + tag + " "
     return str
     
 def delete_media():
+    """Searches for all existing media files and deletes them"""
     local_media = glob(image_file_path + "*")
     for media in local_media:
         os.remove(media)
-        
+    return
+
 def print_counters():
+    """Prints tweet_count and error_count if either are greater than 0"""
+    # if tweet_count > 0 or error_count > 0:
+    #     print(str(tweet_count) + " tweets | " + str(error_count) + " errors")
     print(str(tweet_count) + " tweets | " + str(error_count) + " errors")
+    return
     
 if __name__ == "__main__":
     repost()
