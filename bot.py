@@ -40,6 +40,8 @@ def repost():
             media_url = mention.extended_entities["media"][0]["media_url_https"]
             filename = deepdream(media_url)
             # tweet deepdream photo
+            message = get_hashtags(mention.entities["hashtags"], media_url)
+            print("Uploading status: " + message)
             t = api.update_with_media(filename, status=get_hashtags(mention.entities["hashtags"], media_url))
             print("Generated " + get_tweet_url(my_username, t.id))
             # reply to original tweet with deepdream tweet
@@ -142,6 +144,7 @@ def get_hashtags(hash_dict, media_url):
     hash_set = set()
     for tag in hash_dict:
         hash_set.add(tag["text"])
+    
     # set rapidapi metadata
     data = "{\"url\":\"" + media_url + "\"}"
     x_rapidapi_key_file = open("config/x_rapidapi_key.txt")
@@ -152,6 +155,7 @@ def get_hashtags(hash_dict, media_url):
         "accept": "application/json"
     }
     x_rapidapi_key_file.close()
+    
     # try rapidapi image recognition API
     for x in range(api_retries):
         r = requests.post(microsoft_image_description_api_url, data=data, headers=headers)
@@ -167,10 +171,16 @@ def get_hashtags(hash_dict, media_url):
     # extract tags into set
     for tag in r.json()["description"]["tags"]:
         hash_set.add(tag)
-        
+    
+    max_char_count = 280 # max tweet charcter count
     str = "#deepdream "
     for tag in hash_set:
-        str += "#" + tag + " "
+        if len(str) + len(tag) + 2 <= max_char_count:
+            str += "#" + tag + " "
+            continue
+        elif len(str) + len(tag) + 1 <= max_char_count:
+            str += "#" + tag    # if can fit without space, add hashtag then exit
+        break # if max char count reached, stop adding hashtags
     return str
     
 def delete_media():
