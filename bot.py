@@ -29,13 +29,7 @@ def repost():
             # go to next mention
             continue
 
-        if media_type == "video":
-            # if video, reply stating not supported
-            print("Videos not supported")
-            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
-            set_last_tweet_id(mention.id)
-            error_count += 1
-        elif media_type == "photo":
+        if media_type == "photo":
             # if image, process and upload
             media_url = mention.extended_entities["media"][0]["media_url_https"]
             filename = deepdream(media_url)
@@ -46,6 +40,24 @@ def repost():
             api.update_status(status=get_tweet_url(my_username, t.id), in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
             set_last_tweet_id(mention.id)
             tweet_count += 1
+        elif media_type == "video":
+            # if video, reply stating not supported
+            print("Videos not supported")
+            api.update_status(status="Videos not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            error_count += 1
+        elif media_type == "animated_gif":
+            # if GIF, reply stating not supported
+            print("GIFs not supported")
+            api.update_status(status="GIFs not supported - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            error_count += 1
+        else:
+            # any other uncaught errors, reply with general error message
+            print("Unidentified media type: " + media_type)
+            api.update_status(status="Media type unknown - tweet me an image instead! If you believe this is an error, feel free to open an issue https://github.com/ryanku98/deepdream_twitter_bot/issues and link your tweet!", in_reply_to_status_id=mention.id, auto_populate_reply_metadata=True)
+            set_last_tweet_id(mention.id)
+            error_count += 1
         
     delete_media()
     print_counters(tweet_count, error_count)
