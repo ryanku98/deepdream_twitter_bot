@@ -40,8 +40,6 @@ def repost():
             media_url = mention.extended_entities["media"][0]["media_url_https"]
             filename = deepdream(media_url)
             # tweet deepdream photo
-            message = get_hashtags(mention.entities["hashtags"], media_url)
-            print("Uploading status: " + message)
             t = api.update_with_media(filename, status=get_hashtags(mention.entities["hashtags"], media_url))
             print("Generated " + get_tweet_url(my_username, t.id))
             # reply to original tweet with deepdream tweet
