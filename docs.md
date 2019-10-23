@@ -50,3 +50,10 @@ Searches for all existing media files and deletes them
 print_counters(tweets, errors)
 ```
 Prints tweet_count and error_count if either are greater than 0
+# clear_timeline
+
+## wipe_timeline
+```python
+wipe_timeline()
+```
+Simple function for wiping everything from a timeline (useful when dev testing)
