@@ -10,4 +10,4 @@ requests-oauthlib==1.2.0
 six==1.12.0
 tweepy==3.8.0
 tzlocal==2.0.0
-urllib3==1.25.8
+urllib3==1.26.5
